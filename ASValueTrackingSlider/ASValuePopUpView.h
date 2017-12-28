@@ -30,19 +30,16 @@
 - (void)setColor:(UIColor *)color;
 - (UIColor *)opaqueColor;
 
-- (void)setTextColor:(UIColor *)textColor;
-- (void)setFont:(UIFont *)font;
 - (void)setText:(NSString *)text;
+- (void)setImage:(UIImage *)image;
 
 - (void)setAnimatedColors:(NSArray *)animatedColors withKeyTimes:(NSArray *)keyTimes;
 
 - (void)setAnimationOffset:(CGFloat)animOffset returnColor:(void (^)(UIColor *opaqueReturnColor))block;
 
-- (void)setFrame:(CGRect)frame arrowOffset:(CGFloat)arrowOffset text:(NSString *)text;
+- (void)setFrame:(CGRect)frame arrowOffset:(CGFloat)arrowOffset;
 
 - (void)animateBlock:(void (^)(CFTimeInterval duration))block;
-
-- (CGSize)popUpSizeForString:(NSString *)string;
 
 - (void)showAnimated:(BOOL)animated;
 - (void)hideAnimated:(BOOL)animated completionBlock:(void (^)())block;

@@ -7,7 +7,6 @@
 //
 
 #import "ASValueTrackingSlider.h"
-#import "ASValuePopUpView.h"
 
 @interface ASValueTrackingSlider() <ASValuePopUpViewDelegate>
 @property (strong, nonatomic) ASValuePopUpView *popUpView;
@@ -59,17 +58,13 @@
     }
 }
 
-- (void)setTextColor:(UIColor *)color
+- (void)setText:(NSString *)text
 {
-    _textColor = color;
-    [self.popUpView setTextColor:color];
+    [self.popUpView setText:text];
 }
-
-- (void)setFont:(UIFont *)font
+- (void)setImage:(UIImage *)image
 {
-    NSAssert(font, @"font can not be nil, it must be a valid UIFont");
-    _font = font;
-    [self.popUpView setFont:font];
+    [self.popUpView setImage:image];
 }
 
 // return the currently displayed color if possible, otherwise return _popUpViewColor
@@ -167,23 +162,6 @@
     _valueRange = self.maximumValue - self.minimumValue;
 }
 
-// set max and min digits to same value to keep string length consistent
-- (void)setMaxFractionDigitsDisplayed:(NSUInteger)maxDigits
-{
-    [_numberFormatter setMaximumFractionDigits:maxDigits];
-    [_numberFormatter setMinimumFractionDigits:maxDigits];
-}
-
-- (void)setNumberFormatter:(NSNumberFormatter *)numberFormatter
-{
-    _numberFormatter = [numberFormatter copy];
-}
-
-- (NSNumberFormatter *)numberFormatter
-{
-    return [_numberFormatter copy]; // return a copy to prevent formatter properties changing and causing mayhem
-}
-
 - (void)showPopUpViewAnimated:(BOOL)animated
 {
     self.popUpViewAlwaysOn = YES;
@@ -231,8 +209,6 @@
     self.popUpView.delegate = self;
     [self addSubview:self.popUpView];
 
-    self.textColor = [UIColor whiteColor];
-    self.font = [UIFont boldSystemFontOfSize:22.0f];
 }
 
 // ensure animation restarts if app is closed then becomes active again
@@ -245,14 +221,7 @@
 
 - (void)updatePopUpView
 {
-    NSString *valueString; // ask dataSource for string, if nil or blank, get string from _numberFormatter
-    CGSize popUpViewSize;
-    if ((valueString = [self.dataSource slider:self stringForValue:self.value]) && valueString.length != 0) {
-        popUpViewSize = [self.popUpView popUpSizeForString:valueString];
-    } else {
-        valueString = [_numberFormatter stringFromNumber:@(self.value)];
-        popUpViewSize = [self calculatePopUpViewSize];
-    }
+    CGSize popUpViewSize = CGSizeMake(100, 56 + self.popUpViewArrowLength + 18);
     
     // calculate the popUpView frame
     CGRect thumbRect = [self thumbRect];
@@ -270,16 +239,8 @@
     CGFloat offset = minOffsetX < 0.0 ? minOffsetX : (maxOffsetX > 0.0 ? maxOffsetX : 0.0);
     popUpRect.origin.x -= offset;
     
-    [self.popUpView setFrame:popUpRect arrowOffset:offset text:valueString];
-}
-
-- (CGSize)calculatePopUpViewSize
-{
-    // negative values need more width than positive values
-    CGSize minValSize = [self.popUpView popUpSizeForString:[_numberFormatter stringFromNumber:@(self.minimumValue)]];
-    CGSize maxValSize = [self.popUpView popUpSizeForString:[_numberFormatter stringFromNumber:@(self.maximumValue)]];
-
-    return (minValSize.width >= maxValSize.width) ? minValSize : maxValSize;
+    [self.popUpView setFrame:popUpRect arrowOffset:offset];
+    
 }
 
 // takes an array of NSNumbers in the range self.minimumValue - self.maximumValue
@@ -380,7 +341,7 @@
 - (BOOL)beginTrackingWithTouch:(UITouch *)touch withEvent:(UIEvent *)event
 {
     BOOL begin = [super beginTrackingWithTouch:touch withEvent:event];
-    if (begin && !self.popUpViewAlwaysOn) [self _showPopUpViewAnimated:YES];
+    if (begin && !self.popUpViewAlwaysOn) [self _showPopUpViewAnimated:NO];
     return begin;
 }
 
@@ -398,13 +359,14 @@
 - (void)cancelTrackingWithEvent:(UIEvent *)event
 {
     [super cancelTrackingWithEvent:event];
-    if (self.popUpViewAlwaysOn == NO) [self _hidePopUpViewAnimated:YES];
+    if (self.popUpViewAlwaysOn == NO) [self _hidePopUpViewAnimated:NO];
 }
 
 - (void)endTrackingWithTouch:(UITouch *)touch withEvent:(UIEvent *)event
 {
     [super endTrackingWithTouch:touch withEvent:event];
-    if (self.popUpViewAlwaysOn == NO) [self _hidePopUpViewAnimated:YES];
+    if (self.popUpViewAlwaysOn == NO) [self _hidePopUpViewAnimated:NO];
 }
+
 
 @end

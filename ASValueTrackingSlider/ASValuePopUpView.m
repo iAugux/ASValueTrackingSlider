@@ -40,14 +40,12 @@ NSString *const SliderFillColorAnim = @"fillColor";
     BOOL _shouldAnimate;
     CFTimeInterval _animDuration;
     
-    NSMutableAttributedString *_attributedString;
     CAShapeLayer *_pathLayer;
     
-    CATextLayer *_textLayer;
+    UIImageView *_imageView;
+    UILabel *_timeLabel;
     CGFloat _arrowCenterOffset;
     
-    // never actually visible, its purpose is to interpolate color values for the popUpView color animation
-    // using shape layer because it has a 'fillColor' property which is consistent with _backgroundLayer
     CAShapeLayer *_colorAnimLayer;
 }
 
@@ -86,18 +84,19 @@ NSString *const SliderFillColorAnim = @"fillColor";
         _widthPaddingFactor = 1.15;
         _heightPaddingFactor = 1.1;
         
-        _textLayer = [CATextLayer layer];
-        _textLayer.alignmentMode = kCAAlignmentCenter;
-        _textLayer.anchorPoint = CGPointMake(0, 0);
-        _textLayer.contentsScale = [UIScreen mainScreen].scale;
-        _textLayer.actions = @{@"contents" : [NSNull null]};
-        
         _colorAnimLayer = [CAShapeLayer layer];
-        
         [self.layer addSublayer:_colorAnimLayer];
-        [self.layer addSublayer:_textLayer];
+
+        _timeLabel = [[UILabel alloc] init];
+        _timeLabel.text = @"10:00";
+        _timeLabel.font = [UIFont systemFontOfSize:10.0];
+        _timeLabel.textAlignment = NSTextAlignmentCenter;
+        _timeLabel.textColor = [UIColor whiteColor];
+        [self addSubview:_timeLabel];
         
-        _attributedString = [[NSMutableAttributedString alloc] initWithString:@" " attributes:nil];
+        _imageView = [[UIImageView alloc] initWithFrame:CGRectZero];
+        [self addSubview:_imageView];
+        
     }
     return self;
 }
@@ -107,6 +106,7 @@ NSString *const SliderFillColorAnim = @"fillColor";
     if (_cornerRadius == radius) return;
     _cornerRadius = radius;
     _pathLayer.path = [self pathForRect:self.bounds withArrowOffset:_arrowCenterOffset].CGPath;
+
 }
 
 - (UIColor *)color
@@ -125,25 +125,14 @@ NSString *const SliderFillColorAnim = @"fillColor";
     return opaqueUIColorFromCGColor([_colorAnimLayer.presentationLayer fillColor] ?: _pathLayer.fillColor);
 }
 
-- (void)setTextColor:(UIColor *)color
-{
-    _textLayer.foregroundColor = color.CGColor;
-}
-
-- (void)setFont:(UIFont *)font
-{
-    [_attributedString addAttribute:NSFontAttributeName
-                              value:font
-                              range:NSMakeRange(0, [_attributedString length])];
-    
-    _textLayer.font = (__bridge CFTypeRef)(font.fontName);
-    _textLayer.fontSize = font.pointSize;
-}
-
 - (void)setText:(NSString *)string
 {
-    [[_attributedString mutableString] setString:string];
-    _textLayer.string = string;
+    _timeLabel.text = string;
+}
+
+- (void)setImage:(UIImage *)image
+{
+    _imageView.image = image;
 }
 
 // set up an animation, but prevent it from running automatically
@@ -180,7 +169,7 @@ NSString *const SliderFillColorAnim = @"fillColor";
     }
 }
 
-- (void)setFrame:(CGRect)frame arrowOffset:(CGFloat)arrowOffset text:(NSString *)text
+- (void)setFrame:(CGRect)frame arrowOffset:(CGFloat)arrowOffset
 {
     // only redraw path if either the arrowOffset or popUpView size has changed
     if (arrowOffset != _arrowCenterOffset || !CGSizeEqualToSize(frame.size, self.frame.size)) {
@@ -193,7 +182,6 @@ NSString *const SliderFillColorAnim = @"fillColor";
     self.layer.position = CGPointMake(CGRectGetMinX(frame) + CGRectGetWidth(frame)*anchorX, 0);
     self.layer.bounds = (CGRect){CGPointZero, frame.size};
     
-    [self setText:text];
 }
 
 // _shouldAnimate = YES; causes 'actionForLayer:' to return an animation for layer property changes
@@ -211,15 +199,6 @@ NSString *const SliderFillColorAnim = @"fillColor";
     
     block(_animDuration);
     _shouldAnimate = NO;
-}
-
-- (CGSize)popUpSizeForString:(NSString *)string
-{
-    [[_attributedString mutableString] setString:string];
-    CGFloat w, h;
-    w = ceilf([_attributedString size].width * _widthPaddingFactor);
-    h = ceilf(([_attributedString size].height * _heightPaddingFactor) + _arrowLength);
-    return CGSizeMake(w, h);
 }
 
 - (void)showAnimated:(BOOL)animated
@@ -264,7 +243,9 @@ NSString *const SliderFillColorAnim = @"fillColor";
                 animation.duration = 0.75;
             }];
         } else { // not animated - just set opacity to 0.0
-            self.layer.opacity = 0.0;
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                self.layer.opacity = 0.0;
+            });
         }
     } [CATransaction commit];
 }
@@ -318,11 +299,12 @@ NSString *const SliderFillColorAnim = @"fillColor";
 {
     [super layoutSubviews];
     
-    CGFloat textHeight = [_attributedString size].height;
     CGRect textRect = CGRectMake(self.bounds.origin.x,
-                                 (self.bounds.size.height-_arrowLength-textHeight)/2,
-                                 self.bounds.size.width, textHeight);
-    _textLayer.frame = CGRectIntegral(textRect);
+                                 0,
+                                 self.bounds.size.width, 13);
+    _timeLabel.frame = textRect;
+    CGRect imageReact = CGRectMake(self.bounds.origin.x+5, textRect.size.height+textRect.origin.y, self.bounds.size.width-10, 56);
+    _imageView.frame = imageReact;
 }
 
 static UIColor* opaqueUIColorFromCGColor(CGColorRef col)
