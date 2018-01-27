@@ -95,6 +95,7 @@ NSString *const SliderFillColorAnim = @"fillColor";
         [self addSubview:_timeLabel];
         
         _imageView = [[UIImageView alloc] initWithFrame:CGRectZero];
+        _imageView.contentMode = UIViewContentModeScaleAspectFill;
         [self addSubview:_imageView];
         
     }
