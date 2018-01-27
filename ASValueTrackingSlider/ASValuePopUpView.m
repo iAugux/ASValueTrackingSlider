@@ -96,6 +96,7 @@ NSString *const SliderFillColorAnim = @"fillColor";
         
         _imageView = [[UIImageView alloc] initWithFrame:CGRectZero];
         _imageView.contentMode = UIViewContentModeScaleAspectFill;
+        _imageView.clipsToBounds = YES;
         [self addSubview:_imageView];
         
     }
